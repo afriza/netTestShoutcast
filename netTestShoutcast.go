@@ -60,8 +60,7 @@ func printUsage() {
 }
 
 func init() {
-	args := os.Args[1:]
-	if len(args) < 2 {
+	if len(os.Args) < 3 {
 		printUsage()
 		os.Exit(-1)
 	}
@@ -74,7 +73,7 @@ func init() {
 		num_conn = uint(n)
 	}
 
-	if len(args) > 3 {
+	if len(os.Args) > 3 {
 		if n, e := strconv.ParseUint(os.Args[3], 10, 0); e != nil {
 			printUsage()
 			os.Exit(-1)
