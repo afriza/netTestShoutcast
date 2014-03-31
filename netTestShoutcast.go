@@ -6,26 +6,27 @@ import (
 	"os"
 	"os/signal"
 	"time"
+	"strconv"
 )
 
-var num_conn uint32 = 1014
+var num_conn uint = 1014
 
-const svr_address = "shoutcast.server.com:80"
-const tick_interval = 500
+var svr_address string
+var tick_interval uint = 500
 const buffer_size = 4 * 1024
 const print_progress = false
 
 func create_getter(uri string,
 	bufsize int,
 	quit chan uint16,
-	death chan uint16) func(uint32) {
-	return func(id uint32) {
+	death chan uint16) func(uint) {
+	return func(id uint) {
 		defer func() { death <- 1 }()
 		if print_progress {
 			fmt.Println()
 		}
 		fmt.Println("starting go routine", id)
-		var cnt uint32 = 0
+		var cnt uint = 0
 		buff := make([]byte, bufsize)
 		conn, _ := net.Dial("tcp", uri)
 		defer conn.Close()
@@ -54,6 +55,35 @@ func create_getter(uri string,
 	}
 }
 
+func printUsage() {
+	fmt.Print("Usage: ", os.Args[0], " <host.server.com:port> <num_conn> [interval]\n")
+}
+
+func init() {
+	args := os.Args[1:]
+	if len(args) < 2 {
+		printUsage()
+		os.Exit(-1)
+	}
+
+	svr_address = os.Args[1]
+	if n, e := strconv.ParseUint(os.Args[2], 10, 0); e != nil {
+		printUsage()
+		os.Exit(-1)
+	} else {
+		num_conn = uint(n)
+	}
+
+	if len(args) > 3 {
+		if n, e := strconv.ParseUint(os.Args[3], 10, 0); e != nil {
+			printUsage()
+			os.Exit(-1)
+		} else {
+			tick_interval = uint(n)
+		}
+	}
+}
+
 func main() {
 	quit := make(chan uint16)
 	death := make(chan uint16, 8)
@@ -64,8 +94,8 @@ func main() {
 	signal.Notify(s)
 	var sig os.Signal
 
-	ticker := time.NewTicker(tick_interval * time.Millisecond)
-	var born, dead uint32
+	ticker := time.NewTicker(time.Duration(tick_interval) * time.Millisecond)
+	var born, dead uint
 M:
 	for born < num_conn {
 		select {
