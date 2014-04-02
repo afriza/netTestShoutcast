@@ -28,7 +28,12 @@ func create_getter(uri string,
 		fmt.Println("starting go routine", id)
 		var cnt uint = 0
 		buff := make([]byte, bufsize)
-		conn, _ := net.Dial("tcp", uri)
+		conn, err := net.Dial("tcp", uri)
+		for err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			time.Sleep(5*time.Second)
+			conn, err = net.Dial("tcp", uri)
+		}
 		defer conn.Close()
 		fmt.Fprint(conn, "GET / HTTP/1.0\r\n\r\n")
 		for {
